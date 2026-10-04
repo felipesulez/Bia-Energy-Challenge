@@ -130,6 +130,76 @@ class AssignmentRepository:
             (record_id,),
         ).fetchone()
 
+    def list_assignments(self) -> list[dict]:
+        """Return assignment history with traceability information."""
+
+        rows = self.connection.execute(
+            """
+            SELECT
+                a.id AS assignment_id,
+                a.record_id,
+                a.usuario_id,
+                a.metodo,
+                a.score_zona,
+                a.score_carga,
+                a.score_total,
+                a.carga_antes,
+                a.carga_despues,
+                a.capacidad_antes,
+                a.capacidad_despues,
+                a.utilizacion_antes,
+                a.coincidencia_zona,
+                a.fallback_geografico,
+                a.estado_geografico,
+                a.explicacion_zona,
+                a.razon,
+                t.ejecutado_por,
+                t.ejecutado_en,
+                t.reemplaza_assignment_id,
+                CASE
+                    WHEN aa.assignment_id IS NOT NULL
+                    THEN 1
+                    ELSE 0
+                END AS es_activa
+            FROM assignments a
+            INNER JOIN assignment_traces t
+                ON t.assignment_id = a.id
+            LEFT JOIN active_assignments aa
+                ON aa.assignment_id = a.id
+            ORDER BY a.id ASC
+            """
+        ).fetchall()
+
+        return [
+            {
+                "assignment_id": row["assignment_id"],
+                "record_id": row["record_id"],
+                "usuario_id": row["usuario_id"],
+                "metodo": row["metodo"],
+                "score_zona": row["score_zona"],
+                "score_carga": row["score_carga"],
+                "score_total": row["score_total"],
+                "carga_antes": row["carga_antes"],
+                "carga_despues": row["carga_despues"],
+                "capacidad_antes": row["capacidad_antes"],
+                "capacidad_despues": row["capacidad_despues"],
+                "utilizacion_antes": row["utilizacion_antes"],
+                "coincidencia_zona": bool(row["coincidencia_zona"]),
+                "fallback_geografico": bool(row["fallback_geografico"]),
+                "estado_geografico": row["estado_geografico"],
+                "explicacion_zona": row["explicacion_zona"],
+                "razon": row["razon"],
+                "ejecutado_por": row["ejecutado_por"],
+                "ejecutado_en": row["ejecutado_en"],
+                "reemplaza_assignment_id": row[
+                    "reemplaza_assignment_id"
+                ],
+                "es_activa": bool(row["es_activa"]),
+            }
+            for row in rows
+        ]
+
+
     def _save_one(
         self,
         result: AssignmentResult,

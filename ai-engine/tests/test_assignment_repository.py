@@ -209,3 +209,120 @@ def test_repository_rolls_back_assignment_if_trace_fails(database):
 
         assert assignment_count == 0
         assert trace_count == 0
+
+
+def test_repository_lists_assignment_history(database):
+    result = build_assignment_result()
+
+    with database.connect() as connection:
+        repository = AssignmentRepository(connection)
+
+        assignment_id = repository.save(
+            result,
+            executed_by="felipe",
+            executed_at="2026-10-04T10:00:00+00:00",
+        )
+
+        history = repository.list_assignments()
+
+    assert len(history) == 1
+
+    assignment = history[0]
+
+    assert assignment["assignment_id"] == assignment_id
+    assert assignment["record_id"] == result.assignment.record_id
+    assert assignment["usuario_id"] == result.assignment.usuario_id
+    assert assignment["metodo"] == result.assignment.metodo
+    assert assignment["score_total"] == result.assignment.score_total
+    assert assignment["ejecutado_por"] == "felipe"
+    assert assignment["ejecutado_en"] == (
+        "2026-10-04T10:00:00+00:00"
+    )
+    assert assignment["es_activa"] is True
+    assert assignment["reemplaza_assignment_id"] is None
+
+
+def test_repository_lists_reassignment_history(database):
+    first_result = build_assignment_result()
+
+    with database.connect() as connection:
+        repository = AssignmentRepository(connection)
+
+        first_assignment_id = repository.save(
+            first_result,
+            executed_by="felipe",
+            executed_at="2026-10-04T10:00:00+00:00",
+        )
+
+        second_result = build_assignment_result()
+
+        second_assignment_id = repository.save(
+            second_result,
+            executed_by="paula",
+            executed_at="2026-10-04T11:00:00+00:00",
+            replaces_assignment_id=first_assignment_id,
+        )
+
+        history = repository.list_assignments()
+
+    assert len(history) == 2
+
+    assignments_by_id = {
+        assignment["assignment_id"]: assignment
+        for assignment in history
+    }
+
+    first_assignment = assignments_by_id[first_assignment_id]
+    second_assignment = assignments_by_id[second_assignment_id]
+
+    assert first_assignment["es_activa"] is False
+    assert second_assignment["es_activa"] is True
+
+    assert first_assignment["reemplaza_assignment_id"] is None
+    assert second_assignment["reemplaza_assignment_id"] == (
+        first_assignment_id
+    )
+
+    assert first_assignment["ejecutado_por"] == "felipe"
+    assert second_assignment["ejecutado_por"] == "paula"
+
+
+def test_repository_lists_assignments_with_traceability_fields(database):
+    result = build_assignment_result()
+
+    with database.connect() as connection:
+        repository = AssignmentRepository(connection)
+
+        repository.save(
+            result,
+            executed_by="felipe",
+            executed_at="2026-10-04T10:00:00+00:00",
+        )
+
+        history = repository.list_assignments()
+
+    assignment = history[0]
+
+    assert assignment["score_zona"] == result.assignment.score_zona
+    assert assignment["score_carga"] == result.assignment.score_carga
+    assert assignment["carga_antes"] == result.assignment.carga_antes
+    assert assignment["carga_despues"] == result.assignment.carga_despues
+    assert assignment["capacidad_antes"] == (
+        result.assignment.capacidad_antes
+    )
+    assert assignment["capacidad_despues"] == (
+        result.assignment.capacidad_despues
+    )
+    assert assignment["coincidencia_zona"] == (
+        result.assignment.coincidencia_zona
+    )
+    assert assignment["fallback_geografico"] == (
+        result.assignment.fallback_geografico
+    )
+    assert assignment["estado_geografico"] == (
+        result.assignment.estado_geografico
+    )
+    assert assignment["explicacion_zona"] == (
+        result.assignment.explicacion_zona
+    )
+    assert assignment["razon"] == result.assignment.razon
