@@ -8,7 +8,7 @@ from assignment_engine.persistence.record_repository import RecordRepository
 
 from app.dependencies import (
     build_assignment_service,
-    get_execute_context,
+    get_assignment_history_context,
     load_assignment_data,
 )
 from app.main import app
@@ -47,13 +47,8 @@ def test_get_assignments_returns_assignment_history(tmp_path):
         executed_by="felipe",
     )
 
-    app.dependency_overrides[get_execute_context] = (
-        lambda: (
-            service,
-            users,
-            records,
-            absences,
-        )
+    app.dependency_overrides[get_assignment_history_context] = (
+        lambda: service
     )
 
     try:
