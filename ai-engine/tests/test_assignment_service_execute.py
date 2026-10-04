@@ -224,3 +224,47 @@ def test_execute_completes_full_assignment_cycle(tmp_path):
         assignment.carga_despues <= assignment.capacidad_antes
         for assignment in result.assignments
     )
+
+def test_service_lists_assignment_history(tmp_path):
+    database = Database(tmp_path / "test.db")
+    database.initialize()
+
+    users = load_users(DATA_DIR / "usuarios.csv")
+    records = load_records(DATA_DIR / "registros.csv")
+    absences = load_absences(DATA_DIR / "ausencias.csv")
+
+    with database.connect() as connection:
+        repository = AssignmentRepository(connection)
+        record_repository = RecordRepository(connection)
+
+        initialize_record_repository(
+            record_repository,
+            records,
+        )
+
+        service = build_service(
+            repository,
+            record_repository,
+        )
+
+        service.execute_pending_records(
+            records=records,
+            users=users,
+            absences=absences,
+            evaluation_date=EVALUATION_DATE,
+            executed_by="felipe.sulez",
+        )
+
+        history = service.list_assignments()
+
+    assert len(history) == 71
+
+    assert all(
+        assignment["es_activa"] is True
+        for assignment in history
+    )
+
+    assert all(
+        assignment["ejecutado_por"] == "felipe.sulez"
+        for assignment in history
+    )

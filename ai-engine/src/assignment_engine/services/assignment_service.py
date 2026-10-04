@@ -80,6 +80,16 @@ class AssignmentService:
 
         return result
 
+    def list_assignments(self) -> list[dict]:
+        """Return assignment history from the repository."""
+
+        if self.repository is None:
+            raise ValueError(
+                "AssignmentRepository is required to list assignments."
+            )
+
+        return self.repository.list_assignments()
+
     def assign_record(
         self,
         record,
