@@ -6,6 +6,13 @@ from pydantic import BaseModel
 class AssignmentPreviewRequest(BaseModel):
     evaluation_date: date
 
+class AssignmentExecuteRequest(BaseModel):
+    evaluation_date: date
+    executed_by: str
+
+
+    evaluation_date: date
+    executed_by: str
 
 class AssignmentResponse(BaseModel):
     record_id: int

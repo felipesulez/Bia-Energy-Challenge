@@ -30,3 +30,6 @@ build/
 .idea/
 .vscode/
 .DS_Store
+
+# Local database
+data/*.db

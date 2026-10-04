@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from assignment_engine.persistence.database import Database
 from assignment_engine.data.loader import (
     load_absences,
     load_records,
@@ -21,6 +22,32 @@ DATA_DIR = (
     / "data-opcion-a"
     / "data-opcion-a"
 )
+
+DATABASE_PATH = (
+    Path(__file__).resolve().parents[2]
+    / "data"
+    / "assignment.db"
+)
+
+
+def get_execute_context():
+    database = Database(DATABASE_PATH)
+    database.initialize()
+
+    connection = database.connect()
+
+    try:
+        repository = AssignmentRepository(connection)
+
+        service = build_assignment_service(
+            repository=repository,
+        )
+
+        users, records, absences = load_assignment_data()
+
+        yield service, users, records, absences
+    finally:
+        connection.close()
 
 
 def build_assignment_service(

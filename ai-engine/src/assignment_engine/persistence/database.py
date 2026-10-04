@@ -1,4 +1,3 @@
-
 import sqlite3
 from pathlib import Path
 
@@ -15,7 +14,10 @@ class Database:
             exist_ok=True,
         )
 
-        connection = sqlite3.connect(self.database_path)
+        connection = sqlite3.connect(
+            self.database_path,
+            check_same_thread=False,
+        )
         connection.row_factory = sqlite3.Row
         connection.execute("PRAGMA foreign_keys = ON")
 
