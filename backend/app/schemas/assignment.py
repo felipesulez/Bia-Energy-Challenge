@@ -82,3 +82,36 @@ class AssignmentTraceResponse(BaseModel):
 class AssignmentPreviewResponse(BaseModel):
     assignments: list[AssignmentResponse]
     traces: list[AssignmentTraceResponse]
+
+class AssignmentHistoryResponse(BaseModel):
+    assignment_id: int
+    record_id: int
+    usuario_id: int
+    metodo: str
+
+    score_zona: float
+    score_carga: float
+    score_total: float
+
+    carga_antes: int
+    carga_despues: int
+    capacidad_antes: float
+    capacidad_despues: float
+    utilizacion_antes: float
+
+    coincidencia_zona: bool
+    fallback_geografico: bool
+    estado_geografico: str
+    explicacion_zona: str
+    razon: str
+
+    ejecutado_por: str | None
+    ejecutado_en: str | None
+
+    reemplaza_assignment_id: int | None
+    es_activa: bool
+
+
+class AssignmentHistoryListResponse(BaseModel):
+    assignments: list[AssignmentHistoryResponse]
+    total: int

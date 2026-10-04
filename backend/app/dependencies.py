@@ -97,3 +97,16 @@ def get_preview_context():
     users, records, absences = load_assignment_data()
 
     return service, users, records, absences
+
+
+def get_assignment_history_context():
+    database = Database(DATABASE_PATH)
+    database.initialize()
+    connection = database.connect()
+
+    try:
+        repository = AssignmentRepository(connection)
+        service = build_assignment_service(repository=repository)
+        yield service
+    finally:
+        connection.close()

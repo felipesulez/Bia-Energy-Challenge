@@ -1,12 +1,14 @@
 from fastapi import APIRouter, Depends
 
 from app.dependencies import (
+    get_assignment_history_context,
     get_execute_context,
     get_preview_context,
 )
 from app.mappers import to_preview_response
 from app.schemas.assignment import (
     AssignmentExecuteRequest,
+    AssignmentHistoryListResponse,
     AssignmentPreviewRequest,
     AssignmentPreviewResponse,
 )
@@ -16,6 +18,21 @@ router = APIRouter(
     prefix="/assignments",
     tags=["assignments"],
 )
+
+
+@router.get(
+    "",
+    response_model=AssignmentHistoryListResponse,
+)
+def get_assignments(
+    service=Depends(get_assignment_history_context),
+):
+    assignments = service.list_assignments()
+
+    return {
+        "assignments": assignments,
+        "total": len(assignments),
+    }
 
 
 @router.post(
