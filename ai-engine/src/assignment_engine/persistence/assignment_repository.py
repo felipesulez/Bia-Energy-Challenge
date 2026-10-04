@@ -1,15 +1,31 @@
 import json
 import sqlite3
+from contextlib import contextmanager
 from datetime import datetime, timezone
 
 from assignment_engine.domain.assignment_result import AssignmentResult
 
 
 class AssignmentRepository:
-    """Persist assignments and their audit traces atomically."""
+    """Persist assignments and their audit traces."""
 
     def __init__(self, connection: sqlite3.Connection) -> None:
         self.connection = connection
+
+    @contextmanager
+    def transaction(self):
+        """Provide an explicit transaction boundary for a use case."""
+
+        try:
+            self.connection.execute("BEGIN")
+
+            yield
+
+            self.connection.commit()
+
+        except Exception:
+            self.connection.rollback()
+            raise
 
     def save(
         self,
@@ -43,7 +59,7 @@ class AssignmentRepository:
         executed_by: str = "system",
         executed_at: str | None = None,
     ) -> list[int]:
-        """Save a batch of assignments and traces atomically."""
+        """Save a batch of assignments and traces."""
 
         assignment_ids = []
 
@@ -57,6 +73,32 @@ class AssignmentRepository:
                 )
 
                 assignment_ids.append(assignment_id)
+
+        return assignment_ids
+
+    def save_many_without_transaction(
+        self,
+        results: list[AssignmentResult] | tuple[AssignmentResult, ...],
+        executed_by: str = "system",
+        executed_at: str | None = None,
+    ) -> list[int]:
+        """
+        Save a batch without opening or committing a transaction.
+
+        The caller owns the transaction boundary.
+        """
+
+        assignment_ids = []
+
+        for result in results:
+            assignment_id = self._save_one(
+                result=result,
+                executed_by=executed_by,
+                executed_at=executed_at,
+                replaces_assignment_id=None,
+            )
+
+            assignment_ids.append(assignment_id)
 
         return assignment_ids
 

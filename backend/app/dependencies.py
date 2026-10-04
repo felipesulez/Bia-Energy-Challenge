@@ -1,5 +1,9 @@
 from pathlib import Path
 
+from assignment_engine.persistence.record_repository import (
+    RecordRepository,
+)
+
 from assignment_engine.persistence.database import Database
 from assignment_engine.data.loader import (
     load_absences,
@@ -38,20 +42,32 @@ def get_execute_context():
 
     try:
         repository = AssignmentRepository(connection)
+        record_repository = RecordRepository(connection)
+
+        users, records, absences = load_assignment_data()
+
+        record_repository.initialize_records(
+            [
+                {
+                    "id": record.id,
+                    "estado": record.estado,
+                }
+                for record in records
+            ]
+        )
 
         service = build_assignment_service(
             repository=repository,
+            record_repository=record_repository,
         )
-
-        users, records, absences = load_assignment_data()
 
         yield service, users, records, absences
     finally:
         connection.close()
 
-
 def build_assignment_service(
     repository: AssignmentRepository | None = None,
+    record_repository: RecordRepository | None = None,
 ) -> AssignmentService:
     eligibility_rule = EligibilityRule()
     candidate_evaluator = CandidateEvaluator()
@@ -64,6 +80,7 @@ def build_assignment_service(
     return AssignmentService(
         engine=engine,
         repository=repository,
+        record_repository=record_repository,
     )
 
 

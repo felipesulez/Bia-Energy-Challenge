@@ -7,14 +7,18 @@ from assignment_engine.data.loader import (
     load_users,
 )
 from assignment_engine.engine.weighted_rules import WeightedRulesEngine
-from assignment_engine.persistence.assignment_repository import AssignmentRepository
+from assignment_engine.persistence.assignment_repository import (
+    AssignmentRepository,
+)
 from assignment_engine.persistence.database import Database
+from assignment_engine.persistence.record_repository import RecordRepository
 from assignment_engine.rules.candidate_evaluator import CandidateEvaluator
 from assignment_engine.rules.eligibility import (
     EligibilityRule,
     get_active_absence_user_ids,
 )
 from assignment_engine.services.assignment_service import AssignmentService
+
 
 DATA_DIR = (
     Path(__file__).resolve().parents[2]
@@ -27,7 +31,7 @@ DATA_DIR = (
 EVALUATION_DATE = date(2026, 10, 3)
 
 
-def build_service(repository):
+def build_service(repository, record_repository):
     eligibility_rule = EligibilityRule()
     candidate_evaluator = CandidateEvaluator()
 
@@ -39,6 +43,22 @@ def build_service(repository):
     return AssignmentService(
         engine=engine,
         repository=repository,
+        record_repository=record_repository,
+    )
+
+
+def initialize_record_repository(
+    record_repository,
+    records,
+):
+    record_repository.initialize_records(
+        [
+            {
+                "id": record.id,
+                "estado": record.estado,
+            }
+            for record in records
+        ]
     )
 
 
@@ -52,7 +72,17 @@ def test_execute_persists_executed_by_in_trace(tmp_path):
 
     with database.connect() as connection:
         repository = AssignmentRepository(connection)
-        service = build_service(repository)
+        record_repository = RecordRepository(connection)
+
+        initialize_record_repository(
+            record_repository,
+            records,
+        )
+
+        service = build_service(
+            repository,
+            record_repository,
+        )
 
         service.execute_pending_records(
             records=records,
@@ -109,7 +139,17 @@ def test_execute_completes_full_assignment_cycle(tmp_path):
 
     with database.connect() as connection:
         repository = AssignmentRepository(connection)
-        service = build_service(repository)
+        record_repository = RecordRepository(connection)
+
+        initialize_record_repository(
+            record_repository,
+            records,
+        )
+
+        service = build_service(
+            repository,
+            record_repository,
+        )
 
         result = service.execute_pending_records(
             records=records,

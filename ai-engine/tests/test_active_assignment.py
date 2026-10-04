@@ -9,8 +9,11 @@ from assignment_engine.data.loader import (
     load_users,
 )
 from assignment_engine.engine.weighted_rules import WeightedRulesEngine
-from assignment_engine.persistence.assignment_repository import AssignmentRepository
+from assignment_engine.persistence.assignment_repository import (
+    AssignmentRepository,
+)
 from assignment_engine.persistence.database import Database
+from assignment_engine.persistence.record_repository import RecordRepository
 from assignment_engine.rules.candidate_evaluator import CandidateEvaluator
 from assignment_engine.rules.eligibility import EligibilityRule
 from assignment_engine.services.assignment_service import AssignmentService
@@ -27,7 +30,7 @@ DATA_DIR = (
 EVALUATION_DATE = date(2026, 10, 3)
 
 
-def build_service(repository):
+def build_service(repository, record_repository):
     eligibility_rule = EligibilityRule()
     candidate_evaluator = CandidateEvaluator()
 
@@ -39,6 +42,7 @@ def build_service(repository):
     return AssignmentService(
         engine=engine,
         repository=repository,
+        record_repository=record_repository,
     )
 
 
@@ -50,6 +54,21 @@ def load_test_data():
     return users, records, absences
 
 
+def initialize_record_repository(
+    record_repository,
+    records,
+):
+    record_repository.initialize_records(
+        [
+            {
+                "id": record.id,
+                "estado": record.estado,
+            }
+            for record in records
+        ]
+    )
+
+
 def test_saved_assignment_becomes_active(tmp_path):
     database = Database(tmp_path / "test.db")
     database.initialize()
@@ -58,7 +77,17 @@ def test_saved_assignment_becomes_active(tmp_path):
 
     with database.connect() as connection:
         repository = AssignmentRepository(connection)
-        service = build_service(repository)
+        record_repository = RecordRepository(connection)
+
+        initialize_record_repository(
+            record_repository,
+            records,
+        )
+
+        service = build_service(
+            repository,
+            record_repository,
+        )
 
         result = service.execute_pending_records(
             records=records,
@@ -94,7 +123,17 @@ def test_record_cannot_have_two_active_assignments(tmp_path):
 
     with database.connect() as connection:
         repository = AssignmentRepository(connection)
-        service = build_service(repository)
+        record_repository = RecordRepository(connection)
+
+        initialize_record_repository(
+            record_repository,
+            records,
+        )
+
+        service = build_service(
+            repository,
+            record_repository,
+        )
 
         result = service.execute_pending_records(
             records=records,
@@ -134,7 +173,17 @@ def test_execute_does_not_duplicate_existing_assignment(tmp_path):
 
     with database.connect() as connection:
         repository = AssignmentRepository(connection)
-        service = build_service(repository)
+        record_repository = RecordRepository(connection)
+
+        initialize_record_repository(
+            record_repository,
+            records,
+        )
+
+        service = build_service(
+            repository,
+            record_repository,
+        )
 
         first_result = service.execute_pending_records(
             records=records,
@@ -187,7 +236,10 @@ def test_reassignment_replaces_active_assignment(tmp_path):
 
     with database.connect() as connection:
         repository = AssignmentRepository(connection)
-        service = build_service(repository)
+        service = build_service(
+            repository,
+            record_repository=None,
+        )
 
         first_result = service.assign_record(
             record=record,

@@ -89,5 +89,11 @@ CREATE TABLE IF NOT EXISTS active_assignments (
     assigned_at TEXT NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS records (
+    id INTEGER PRIMARY KEY,
+    estado TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+
 CREATE INDEX IF NOT EXISTS idx_active_assignments_usuario_id
     ON active_assignments(usuario_id);

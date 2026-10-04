@@ -10,9 +10,15 @@ from assignment_engine.rules.eligibility import get_active_absence_user_ids
 class AssignmentService:
     PENDING_STATUS = "nuevo"
 
-    def __init__(self, engine, repository=None):
+    def __init__(
+        self,
+        engine,
+        repository=None,
+        record_repository=None,
+    ):
         self.engine = engine
         self.repository = repository
+        self.record_repository = record_repository
 
     def preview_pending_records(
         self,
@@ -43,6 +49,11 @@ class AssignmentService:
                 "AssignmentRepository is required for execution."
             )
 
+        if self.record_repository is None:
+            raise ValueError(
+                "RecordRepository is required for execution."
+            )
+
         active_record_ids = self.repository.get_active_record_ids()
 
         result = self._assign_pending_records(
@@ -53,10 +64,19 @@ class AssignmentService:
             excluded_record_ids=active_record_ids,
         )
 
-        self.repository.save_many(
-            results=self._to_assignment_results(result),
-            executed_by=executed_by,
-        )
+        assignment_results = self._to_assignment_results(result)
+
+        with self.repository.transaction():
+            self.repository.save_many_without_transaction(
+                results=assignment_results,
+                executed_by=executed_by,
+            )
+
+            for assignment in result.assignments:
+                self.record_repository.update_status(
+                    record_id=assignment.record_id,
+                    status="asignado",
+                )
 
         return result
 
