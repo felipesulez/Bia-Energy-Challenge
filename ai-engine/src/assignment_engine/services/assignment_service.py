@@ -1,10 +1,16 @@
 import copy
 
-from assignment_engine.domain.assignment_batch_result import AssignmentBatchResult
+from assignment_engine.domain.assignment_batch_result import (
+    AssignmentBatchResult,
+)
 from assignment_engine.domain.assignment_result import AssignmentResult
 from assignment_engine.engine.weighted_rules import WeightedRulesEngine
-from assignment_engine.persistence.assignment_repository import AssignmentRepository
-from assignment_engine.rules.eligibility import get_active_absence_user_ids
+from assignment_engine.persistence.assignment_repository import (
+    AssignmentRepository,
+)
+from assignment_engine.rules.eligibility import (
+    get_active_absence_user_ids,
+)
 
 
 class AssignmentService:
@@ -293,6 +299,7 @@ class AssignmentService:
 
     def get_assignment(self, assignment_id: int) -> dict | None:
         """Return one assignment with its persisted explanation."""
+
         if self.repository is None:
             raise ValueError(
                 "AssignmentRepository is required to get an assignment."

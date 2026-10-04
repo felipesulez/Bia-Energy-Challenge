@@ -6,13 +6,16 @@ from pydantic import BaseModel
 class AssignmentPreviewRequest(BaseModel):
     evaluation_date: date
 
+
 class AssignmentExecuteRequest(BaseModel):
     evaluation_date: date
     executed_by: str
 
 
+class AssignmentReassignRequest(BaseModel):
     evaluation_date: date
     executed_by: str
+
 
 class AssignmentResponse(BaseModel):
     record_id: int
@@ -83,6 +86,7 @@ class AssignmentPreviewResponse(BaseModel):
     assignments: list[AssignmentResponse]
     traces: list[AssignmentTraceResponse]
 
+
 class AssignmentHistoryResponse(BaseModel):
     assignment_id: int
     record_id: int
@@ -111,8 +115,10 @@ class AssignmentHistoryResponse(BaseModel):
     reemplaza_assignment_id: int | None
     es_activa: bool
 
+
 class AssignmentDetailResponse(AssignmentHistoryResponse):
     pass
+
 
 class AssignmentHistoryListResponse(BaseModel):
     assignments: list[AssignmentHistoryResponse]

@@ -1,10 +1,5 @@
 from pathlib import Path
 
-from assignment_engine.persistence.record_repository import (
-    RecordRepository,
-)
-
-from assignment_engine.persistence.database import Database
 from assignment_engine.data.loader import (
     load_absences,
     load_records,
@@ -13,6 +8,10 @@ from assignment_engine.data.loader import (
 from assignment_engine.engine.weighted_rules import WeightedRulesEngine
 from assignment_engine.persistence.assignment_repository import (
     AssignmentRepository,
+)
+from assignment_engine.persistence.database import Database
+from assignment_engine.persistence.record_repository import (
+    RecordRepository,
 )
 from assignment_engine.rules.candidate_evaluator import CandidateEvaluator
 from assignment_engine.rules.eligibility import EligibilityRule
@@ -65,6 +64,7 @@ def get_execute_context():
     finally:
         connection.close()
 
+
 def build_assignment_service(
     repository: AssignmentRepository | None = None,
     record_repository: RecordRepository | None = None,
@@ -102,11 +102,17 @@ def get_preview_context():
 def get_assignment_history_context():
     database = Database(DATABASE_PATH)
     database.initialize()
+
     connection = database.connect()
 
     try:
         repository = AssignmentRepository(connection)
         service = build_assignment_service(repository=repository)
+
         yield service
     finally:
         connection.close()
+
+
+def get_reassign_context():
+    yield from get_execute_context()
