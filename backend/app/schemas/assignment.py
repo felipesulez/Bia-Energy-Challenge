@@ -111,6 +111,8 @@ class AssignmentHistoryResponse(BaseModel):
     reemplaza_assignment_id: int | None
     es_activa: bool
 
+class AssignmentDetailResponse(AssignmentHistoryResponse):
+    pass
 
 class AssignmentHistoryListResponse(BaseModel):
     assignments: list[AssignmentHistoryResponse]

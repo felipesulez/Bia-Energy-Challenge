@@ -1,10 +1,19 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
+
+from app.schemas.assignment import (
+    AssignmentDetailResponse,
+    AssignmentExecuteRequest,
+    AssignmentHistoryListResponse,
+    AssignmentPreviewRequest,
+    AssignmentPreviewResponse,
+)
 
 from app.dependencies import (
     get_assignment_history_context,
     get_execute_context,
     get_preview_context,
 )
+
 from app.mappers import to_preview_response
 from app.schemas.assignment import (
     AssignmentExecuteRequest,
@@ -13,17 +22,16 @@ from app.schemas.assignment import (
     AssignmentPreviewResponse,
 )
 
-
 router = APIRouter(
     prefix="/assignments",
     tags=["assignments"],
 )
 
-
 @router.get(
     "",
     response_model=AssignmentHistoryListResponse,
 )
+
 def get_assignments(
     service=Depends(get_assignment_history_context),
 ):
@@ -34,6 +42,24 @@ def get_assignments(
         "total": len(assignments),
     }
 
+@router.get(
+    "/{assignment_id}",
+    response_model=AssignmentDetailResponse,
+)
+
+def get_assignment(
+    assignment_id: int,
+    service=Depends(get_assignment_history_context),
+):
+    assignment = service.get_assignment(assignment_id)
+
+    if assignment is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Assignment not found.",
+        )
+
+    return assignment
 
 @router.post(
     "/preview",
@@ -53,7 +79,6 @@ def preview_assignments(
     )
 
     return to_preview_response(result)
-
 
 @router.post(
     "/execute",

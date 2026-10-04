@@ -291,6 +291,15 @@ class AssignmentService:
             )
         ]
 
+    def get_assignment(self, assignment_id: int) -> dict | None:
+        """Return one assignment with its persisted explanation."""
+        if self.repository is None:
+            raise ValueError(
+                "AssignmentRepository is required to get an assignment."
+            )
+
+        return self.repository.get_assignment(assignment_id)
+
     def _get_pending_records(
         self,
         records,
