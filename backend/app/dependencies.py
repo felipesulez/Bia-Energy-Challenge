@@ -6,6 +6,9 @@ from assignment_engine.data.loader import (
     load_users,
 )
 from assignment_engine.engine.weighted_rules import WeightedRulesEngine
+from assignment_engine.persistence.assignment_repository import (
+    AssignmentRepository,
+)
 from assignment_engine.rules.candidate_evaluator import CandidateEvaluator
 from assignment_engine.rules.eligibility import EligibilityRule
 from assignment_engine.services.assignment_service import AssignmentService
@@ -20,7 +23,9 @@ DATA_DIR = (
 )
 
 
-def build_assignment_service() -> AssignmentService:
+def build_assignment_service(
+    repository: AssignmentRepository | None = None,
+) -> AssignmentService:
     eligibility_rule = EligibilityRule()
     candidate_evaluator = CandidateEvaluator()
 
@@ -29,13 +34,11 @@ def build_assignment_service() -> AssignmentService:
         candidate_evaluator=candidate_evaluator,
     )
 
-    return AssignmentService(engine)
+    return AssignmentService(
+        engine=engine,
+        repository=repository,
+    )
 
-def get_preview_context():
-    service = build_assignment_service()
-    users, records, absences = load_assignment_data()
-
-    return service, users, records, absences
 
 def load_assignment_data():
     users = load_users(DATA_DIR / "usuarios.csv")
@@ -43,6 +46,7 @@ def load_assignment_data():
     absences = load_absences(DATA_DIR / "ausencias.csv")
 
     return users, records, absences
+
 
 def get_preview_context():
     service = build_assignment_service()
