@@ -44,3 +44,21 @@ def test_schema_creates_audit_tables(tmp_path):
         assert "parametros" in columns
         assert "prompt" in columns
         assert "respuesta_modelo" in columns
+
+
+def test_schema_creates_active_assignments_table(tmp_path):
+    database = Database(tmp_path / "test.db")
+    database.initialize()
+
+    with database.connect() as connection:
+        table = connection.execute(
+            """
+            SELECT name
+            FROM sqlite_master
+            WHERE type = 'table'
+              AND name = 'active_assignments'
+            """
+        ).fetchone()
+
+    assert table is not None
+    assert table["name"] == "active_assignments"

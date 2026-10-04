@@ -1,4 +1,3 @@
-
 PRAGMA foreign_keys = ON;
 
 CREATE TABLE IF NOT EXISTS assignments (
@@ -77,3 +76,18 @@ CREATE INDEX IF NOT EXISTS idx_assignment_traces_record_id
 
 CREATE INDEX IF NOT EXISTS idx_assignment_traces_ejecutado_en
     ON assignment_traces(ejecutado_en);
+
+
+CREATE TABLE IF NOT EXISTS active_assignments (
+    record_id INTEGER PRIMARY KEY,
+
+    assignment_id INTEGER NOT NULL UNIQUE
+        REFERENCES assignments(id),
+
+    usuario_id INTEGER NOT NULL,
+
+    assigned_at TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_active_assignments_usuario_id
+    ON active_assignments(usuario_id);

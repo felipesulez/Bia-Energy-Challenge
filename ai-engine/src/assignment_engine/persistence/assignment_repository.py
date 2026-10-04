@@ -21,6 +21,15 @@ class AssignmentRepository:
         """Save one assignment and its trace in one transaction."""
 
         with self.connection:
+            if replaces_assignment_id is not None:
+                self.connection.execute(
+                    """
+                    DELETE FROM active_assignments
+                    WHERE assignment_id = ?
+                    """,
+                    (replaces_assignment_id,),
+                )
+
             return self._save_one(
                 result=result,
                 executed_by=executed_by,
@@ -50,6 +59,34 @@ class AssignmentRepository:
                 assignment_ids.append(assignment_id)
 
         return assignment_ids
+
+    def get_active_record_ids(self) -> set[int]:
+        """Return record IDs that currently have an active assignment."""
+
+        rows = self.connection.execute(
+            """
+            SELECT record_id
+            FROM active_assignments
+            """
+        ).fetchall()
+
+        return {row["record_id"] for row in rows}
+
+    def get_active_assignment(self, record_id: int):
+        """Return the active assignment for a record, if any."""
+
+        return self.connection.execute(
+            """
+            SELECT
+                record_id,
+                assignment_id,
+                usuario_id,
+                assigned_at
+            FROM active_assignments
+            WHERE record_id = ?
+            """,
+            (record_id,),
+        ).fetchone()
 
     def _save_one(
         self,
@@ -158,6 +195,24 @@ class AssignmentRepository:
                 replaces_assignment_id,
                 trace.prompt,
                 trace.respuesta_modelo,
+            ),
+        )
+
+        self.connection.execute(
+            """
+            INSERT INTO active_assignments (
+                record_id,
+                assignment_id,
+                usuario_id,
+                assigned_at
+            )
+            VALUES (?, ?, ?, ?)
+            """,
+            (
+                assignment.record_id,
+                assignment_id,
+                assignment.usuario_id,
+                timestamp,
             ),
         )
 

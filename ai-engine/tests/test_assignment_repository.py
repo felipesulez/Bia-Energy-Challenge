@@ -147,6 +147,44 @@ def test_repository_saves_assignment_and_trace(database):
         assert trace["respuesta_modelo"] is None
 
 
+
+def test_repository_saves_active_assignment(database):
+    result = build_assignment_result()
+
+    with database.connect() as connection:
+        repository = AssignmentRepository(connection)
+
+        assignment_id = repository.save(
+            result,
+            executed_by="felipe",
+            executed_at="2026-10-04T10:00:00+00:00",
+        )
+
+        active_assignment = connection.execute(
+            """
+            SELECT record_id, assignment_id, usuario_id, assigned_at
+            FROM active_assignments
+            WHERE record_id = ?
+            """,
+            (result.assignment.record_id,),
+        ).fetchone()
+
+    assert active_assignment is not None
+
+    assert active_assignment["record_id"] == (
+        result.assignment.record_id
+    )
+
+    assert active_assignment["assignment_id"] == assignment_id
+
+    assert active_assignment["usuario_id"] == (
+        result.assignment.usuario_id
+    )
+
+    assert active_assignment["assigned_at"] == (
+        "2026-10-04T10:00:00+00:00"
+    )
+
 def test_repository_rolls_back_assignment_if_trace_fails(database):
     result = build_assignment_result()
 
